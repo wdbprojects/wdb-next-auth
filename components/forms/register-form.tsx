@@ -15,30 +15,34 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { loginFormSchema } from "@/schemas";
+import { registerFormSchema } from "@/schemas";
 import ErrorForm from "@/components/forms/error-form";
 import SuccessForm from "@/components/forms/success-form";
-import { loginAction } from "@/actions/auth-actions";
+import { registerAction } from "@/actions/auth-actions";
 import { LoaderCircle } from "lucide-react";
 
-const LoginForm = () => {
+const RegisterForm = () => {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
 
-  const form = useForm<z.infer<typeof loginFormSchema>>({
-    resolver: zodResolver(loginFormSchema),
+  const form = useForm<z.infer<typeof registerFormSchema>>({
+    resolver: zodResolver(registerFormSchema),
     defaultValues: {
+      firstName: "",
+      lastName: "",
       email: "",
       password: "",
     },
   });
   const { handleSubmit, control, reset } = form;
 
-  const onSubmit = (values: z.infer<typeof loginFormSchema>) => {
+  const onSubmit = (values: z.infer<typeof registerFormSchema>) => {
+    console.log(values);
+
     startTransition(async () => {
       try {
-        const data = await loginAction(values);
+        const data = await registerAction(values);
         if (data.error) {
           setError(data.error);
           setSuccess("");
@@ -55,13 +59,56 @@ const LoginForm = () => {
 
   return (
     <CardWrapper
-      headerLabel="Welcome back!"
-      backButtonLabel="Don't have an account? Register..."
-      backButtonHref="/auth/register"
+      headerLabel="Create an account"
+      backButtonLabel="Already have an account? Login..."
+      backButtonHref="/auth/login"
       showSocial
     >
       <Form {...form}>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="flex items-center gap-x-2 justify-between">
+            <FormField
+              control={control}
+              name="firstName"
+              render={({ field }) => {
+                return (
+                  <FormItem>
+                    <FormLabel>First Name</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        disabled={isPending}
+                        placeholder="Enter your first name"
+                        autoComplete="off"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+            <FormField
+              control={control}
+              name="lastName"
+              render={({ field }) => {
+                return (
+                  <FormItem>
+                    <FormLabel>Last Name</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        disabled={isPending}
+                        placeholder="Enter your last name"
+                        autoComplete="off"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+          </div>
+
           <FormField
             control={control}
             name="email"
@@ -120,7 +167,7 @@ const LoginForm = () => {
             </Button>
             <Button type="submit" className="w-full" disabled={isPending}>
               {isPending ? <LoaderCircle className="animate-spin" /> : null}
-              <span>Login</span>
+              <span>Register</span>
             </Button>
           </div>
         </form>
@@ -128,4 +175,4 @@ const LoginForm = () => {
     </CardWrapper>
   );
 };
-export default LoginForm;
+export default RegisterForm;
