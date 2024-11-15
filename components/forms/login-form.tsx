@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useSearchParams } from "next/navigation";
 import CardWrapper from "@/components/shared/card-wrapper";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -22,6 +23,12 @@ import { loginAction } from "@/actions/auth-actions";
 import { LoaderCircle } from "lucide-react";
 
 const LoginForm = () => {
+  const searchParams = useSearchParams();
+  const urlError =
+    searchParams.get("error") === "OAuthAccountNotLinked"
+      ? "Email already in use with different provider"
+      : "";
+
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | undefined>("");
   const [success, setSuccess] = useState<string | undefined>("");
@@ -39,10 +46,10 @@ const LoginForm = () => {
     startTransition(async () => {
       try {
         const data = await loginAction(values);
-        if (data.error) {
+        if (data && data.error) {
           setError(data.error);
           setSuccess("");
-        } else {
+        } else if (data && data.success) {
           setError("");
           setSuccess(data.success);
         }
@@ -104,7 +111,7 @@ const LoginForm = () => {
             }}
           />
           <SuccessForm message={success} />
-          <ErrorForm message={error} />
+          <ErrorForm message={error || urlError} />
           <div className="flex items-center justify-between gap-3 !mt-8">
             <Button
               type="reset"

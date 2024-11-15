@@ -9,7 +9,9 @@ import { signIn } from "@/auth";
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
 import { AuthError } from "next-auth";
 
-export const loginAction = async (values: z.infer<typeof loginFormSchema>) => {
+export const loginAction = async (
+  values: z.infer<typeof loginFormSchema>,
+): Promise<{ error?: string; success?: string } | undefined> => {
   const validatedFields = loginFormSchema.safeParse(values);
   console.log(validatedFields);
 
