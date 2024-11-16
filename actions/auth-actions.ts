@@ -8,18 +8,30 @@ import { getUserByEmail } from "@/data/user";
 import { signIn } from "@/auth";
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
 import { AuthError } from "next-auth";
+import { generateVerificationToken } from "@/lib/tokens";
+import { sendVerificationEmail } from "@/lib/mail";
+import { POST } from "@/app/api/send/route";
 
 export const loginAction = async (
   values: z.infer<typeof loginFormSchema>,
 ): Promise<{ error?: string; success?: string } | undefined> => {
   const validatedFields = loginFormSchema.safeParse(values);
   console.log(validatedFields);
-
   if (!validatedFields.success) {
     return { error: "Invalid fields!" };
   }
-
   const { email, password } = validatedFields.data;
+  const existingUser = await getUserByEmail(email);
+  if (!existingUser || !existingUser.email || !existingUser.password) {
+    return { error: "Email does not exist" };
+  }
+  if (!existingUser.emailVerified) {
+    const verificationToken = await generateVerificationToken(
+      existingUser.email,
+    );
+    await POST(verificationToken.email, verificationToken.token);
+    return { success: "Confirmation email sent!" };
+  }
   try {
     await signIn("credentials", {
       email: email,
@@ -62,6 +74,9 @@ export const registerAction = async (
       password: hashedPassword,
     },
   });
-  // TODO: send verification token email
-  return { success: "User created successfully" };
+
+  const verificationToken = await generateVerificationToken(email);
+  await POST(verificationToken.email, verificationToken.token);
+
+  return { success: "Confirmation email sent!" };
 };

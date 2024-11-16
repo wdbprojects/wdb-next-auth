@@ -157,6 +157,7 @@ const RegisterForm = () => {
               type="reset"
               variant="secondary"
               className="w-full"
+              disabled={isPending}
               onClick={() => {
                 reset();
                 setError("");
