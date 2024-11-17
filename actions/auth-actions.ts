@@ -9,8 +9,8 @@ import { signIn } from "@/auth";
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
 import { AuthError } from "next-auth";
 import { generateVerificationToken } from "@/lib/tokens";
-import { sendVerificationEmail } from "@/lib/mail";
-import { POST } from "@/app/api/send/route";
+import { MAILPOST } from "@/lib/mail";
+import { getVerificationTokenByToken } from "@/data/verification-token";
 
 export const loginAction = async (
   values: z.infer<typeof loginFormSchema>,
@@ -29,7 +29,7 @@ export const loginAction = async (
     const verificationToken = await generateVerificationToken(
       existingUser.email,
     );
-    await POST(verificationToken.email, verificationToken.token);
+    await MAILPOST(verificationToken.email, verificationToken.token);
     return { success: "Confirmation email sent!" };
   }
   try {
@@ -76,7 +76,44 @@ export const registerAction = async (
   });
 
   const verificationToken = await generateVerificationToken(email);
-  await POST(verificationToken.email, verificationToken.token);
+  await MAILPOST(verificationToken.email, verificationToken.token);
 
   return { success: "Confirmation email sent!" };
+};
+
+export const newVerificationAction = async (token: string) => {
+  const existingToken = await getVerificationTokenByToken(token);
+
+  if (!existingToken) {
+    return { error: "Token does not exist!" };
+  }
+
+  const hasExpired = new Date(existingToken.expires) < new Date();
+  if (hasExpired) {
+    return { error: "Token has expired!" };
+  }
+
+  const existingUser = await getUserByEmail(existingToken.email);
+
+  if (!existingUser) {
+    return { error: "Email does not exist!" };
+  }
+
+  await db.user.update({
+    where: {
+      id: existingUser.id,
+    },
+    data: {
+      emailVerified: new Date(),
+      email: existingToken.email,
+    },
+  });
+
+  await db.verificationToken.delete({
+    where: {
+      id: existingToken.id,
+    },
+  });
+
+  return { success: "Email verified!" };
 };
