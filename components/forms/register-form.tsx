@@ -38,8 +38,6 @@ const RegisterForm = () => {
   const { handleSubmit, control, reset } = form;
 
   const onSubmit = (values: z.infer<typeof registerFormSchema>) => {
-    console.log(values);
-
     startTransition(async () => {
       try {
         const data = await registerAction(values);
